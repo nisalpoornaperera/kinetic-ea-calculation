@@ -109,12 +109,12 @@ class MechanismGUI:
         ts_data = self.runner.run_optimization(ts_guess_geo, is_ts=True)
         
         # 3. Energy Calculations
-        r_sep_corr, _ = get_corrected_energy(r_sep_data['electronic_energy'], r_sep_data['frequencies'], False)
-        r_complex_corr, _ = get_corrected_energy(r_complex_data['electronic_energy'], r_complex_data['frequencies'], False)
-        ts_corr, _ = get_corrected_energy(ts_data['electronic_energy'], ts_data['frequencies'], True)
+        r_sep_corr, _ = get_corrected_energy(r_sep_data, False)
+        r_complex_corr, _ = get_corrected_energy(r_complex_data, False)
+        ts_corr, _ = get_corrected_energy(ts_data, True)
 
-        ea_sep = convert_ea(calc_activation_energy(r_sep_corr, 0, ts_corr)) # Assuming A+B simplified into sep logic
-        ea_complex = convert_ea(calc_activation_energy(r_complex_corr, 0, ts_corr))
+        ea_sep = convert_ea(calc_activation_energy(r_sep_corr, ts_corr)) 
+        ea_complex = convert_ea(calc_activation_energy(r_complex_corr, ts_corr))
 
         # 4. Generate Report
         report = self.reporter.generate(mech["name"], r_complex_data, r_sep_data, ts_data, ea_sep, ea_complex)
