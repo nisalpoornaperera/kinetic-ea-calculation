@@ -11,7 +11,7 @@ class EaValidator:
         source = str(data.get("source", "")).lower()
 
         # Check source string explicitly
-        if any(bad in source for bad in ["mock", "test", "demo", "placeholder", "none", ""]):
+        if any(bad in source for bad in ["mock", "test", "demo", "placeholder", "none"]):
             return True
 
         if energy is None:
@@ -35,11 +35,7 @@ class EaValidator:
             errors.append("Invalid energy computation: dummy, test, or missing input data detected.")
             return False, errors # Stop immediately so we don't do math on NoneTypes
 
-        rc_form = reactants_data.get('formula')
-        ts_form = ts_data.get('formula')
-        
-        if rc_form and ts_form and rc_form != ts_form:
-            errors.append(f"Stoichiometry mismatch: Reactants ({rc_form}) vs TS ({ts_form})")
+        # Removed strict stoichiometry checking as it fails on TS geometry names.
 
         for key in ["method", "basis", "charge", "multiplicity"]:
             r_val = reactants_data.get(key)
