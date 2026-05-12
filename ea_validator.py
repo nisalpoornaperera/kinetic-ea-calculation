@@ -1,9 +1,37 @@
 class EaValidator:
+    def validate_energy_reference(self, reactants_data, r_complex_data, ts_data):
+        errors = []
+
+        # 1-3. Property matching for Stoichiometry & Basics
+        rc_form = reactants_data.get('formula')
+        ts_form = ts_data.get('formula')
+        
+        if rc_form and ts_form and rc_form != ts_form:
+            errors.append(f"Stoichiometry mismatch: Reactants ({rc_form}) vs TS ({ts_form})")
+
+        for key in ["method", "basis", "charge", "multiplicity"]:
+            r_val = reactants_data.get(key)
+            ts_val = ts_data.get(key)
+            if r_val != ts_val:
+                errors.append(f"Inconsistent {key} between reactants ({r_val}) and TS ({ts_val}).")
+
+        # 4. Frequency validation
+        if len(reactants_data.get("imaginary_freqs", [])) > 0:
+            errors.append("Reactants have imaginary frequencies (not a minimum).")
+        if len(r_complex_data.get("imaginary_freqs", [])) > 0:
+            errors.append("Reactant complex has imaginary frequencies.")
+        if len(ts_data.get("imaginary_freqs", [])) != 1:
+            errors.append(f"TS must have exactly 1 imaginary frequency, found {len(ts_data.get('imaginary_freqs', []))}.")
+
+        # 6. Energy sanity check
+        e_diff = abs(ts_data["electronic_energy"] - reactants_data["electronic_energy"])
+        if e_diff > 2.0:
+            errors.append(f"Invalid energy comparison: TS and reactants differ by more than 2 Hartree ({e_diff:.2f} Ha). This usually means different atom counts, wrong molecule, wrong charge/spin, or wrong output file.")
+
+        return len(errors) == 0, errors
+
     def validate_ts(self, imaginary_freqs):
-        """
-        Validates TS structural properties.
-        Exactly one imaginary frequency required.
-        """
+        """ Legacy wrapper for standalone checking """
         if len(imaginary_freqs) == 1:
             return True, "Valid TS (1 imaginary frequency)"
         elif len(imaginary_freqs) == 0:
@@ -12,12 +40,6 @@ class EaValidator:
             return False, f"Invalid TS ({len(imaginary_freqs)} imaginary frequencies - higher order saddle point)"
 
     def check_negative_ea(self, ea_hartree):
-        """
-        Checks if Ea is negative and issues warnings.
-        """
         if ea_hartree < 0:
-            return ("Warning: Negative Ea detected. This may indicate an invalid TS, "
-                    "incorrect energy reference, or barrierless association. "
-                    "Please inspect TS validation, imaginary frequency, IRC/path connection, "
-                    "charge, spin, and reactant complex energy.")
-        return ""
+            return False, "Negative Ea detected after validation. This may indicate a submerged barrier or barrierless association, but it must be confirmed by IRC/path analysis."
+        return True, ""

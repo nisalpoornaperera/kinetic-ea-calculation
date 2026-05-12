@@ -99,22 +99,44 @@ class MechanismGUI:
         self.write_output("Generating geometries and TS guesses...")
 
         # 1. Build Geometries
-        r_complex_geo = self.geo_builder.build_reactant_complex("R1", "R2", selected_site)
+        r1 = self.r1_var.get().strip()
+        r2 = self.r2_var.get().strip()
+        r_complex_geo = self.geo_builder.build_reactant_complex(r1, r2, selected_site)
         ts_guess_geo = self.ts_builder.build_guess(r_complex_geo, mech, selected_site)
         
         # 2. Run ORCA
         self.write_output("Running DFT Optimizations in ORCA...")
-        r_sep_data = self.runner.run_optimization("Separated_Reactants", is_ts=False)
+        # Incorporate formulas into Separated_Reactants string so OrcaRunner can see it
+        r_sep_data = self.runner.run_optimization(f"Separated_{r1}_{r2}", is_ts=False)
         r_complex_data = self.runner.run_optimization(r_complex_geo, is_ts=False)
         ts_data = self.runner.run_optimization(ts_guess_geo, is_ts=True)
         
+        from ea_validator import EaValidator
+        validator = EaValidator()
+        valid, errors = validator.validate_energy_reference(r_sep_data, r_complex_data, ts_data)
+        if not valid:
+            self.write_output("\nActivation energy was not calculated because validation failed.")
+            for err in errors:
+                self.write_output(f"- {err}")
+            return
+
         # 3. Energy Calculations
         r_sep_corr, _ = get_corrected_energy(r_sep_data, False)
         r_complex_corr, _ = get_corrected_energy(r_complex_data, False)
         ts_corr, _ = get_corrected_energy(ts_data, True)
 
-        ea_sep = convert_ea(calc_activation_energy(r_sep_corr, ts_corr)) 
-        ea_complex = convert_ea(calc_activation_energy(r_complex_corr, ts_corr))
+        ea_sep_val = calc_activation_energy(r_sep_corr, ts_corr)
+        ea_complex_val = calc_activation_energy(r_complex_corr, ts_corr)
+
+        valid_ea1, msg1 = validator.check_negative_ea(ea_sep_val)
+        valid_ea2, msg2 = validator.check_negative_ea(ea_complex_val)
+
+        if not valid_ea1 or not valid_ea2:
+            self.write_output("\n" + msg1)
+            # You could add user confirmation prompt here, but for now we continue showing it with warnings.
+
+        ea_sep = convert_ea(ea_sep_val) 
+        ea_complex = convert_ea(ea_complex_val)
 
         # 4. Generate Report
         report = self.reporter.generate(mech["name"], r_complex_data, r_sep_data, ts_data, ea_sep, ea_complex)
