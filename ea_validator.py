@@ -6,12 +6,15 @@ class EaValidator:
         if not data:
             return True
             
-        energy = data.get("electronic_energy", 0)
+        energy = data.get("electronic_energy")
         freqs = data.get("frequencies", [])
         source = str(data.get("source", "")).lower()
 
         # Check source string explicitly
         if any(bad in source for bad in ["mock", "test", "demo", "placeholder", "none", ""]):
+            return True
+
+        if energy is None:
             return True
 
         if abs(energy - -501.100000) < 0.0001:
@@ -30,6 +33,7 @@ class EaValidator:
 
         if self.is_dummy_data(reactants_data) or self.is_dummy_data(r_complex_data) or self.is_dummy_data(ts_data):
             errors.append("Invalid energy computation: dummy, test, or missing input data detected.")
+            return False, errors # Stop immediately so we don't do math on NoneTypes
 
         rc_form = reactants_data.get('formula')
         ts_form = ts_data.get('formula')
