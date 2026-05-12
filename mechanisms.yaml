@@ -1,0 +1,57 @@
+mechanisms:
+  - id: hydrogen_abstraction_by_O
+    name: Hydrogen abstraction by O radical
+    reactant_patterns:
+      fixed_molecule_contains: ["C-H", "O-H"]
+      attacking_species: ["O", "[O]"]
+    attacking_atom: "O"
+    attacked_atom_options:
+      - "H attached to carbon"
+      - "H attached to oxygen"
+    bonds_broken:
+      - "X-H"
+    bonds_formed:
+      - "O-H"
+    product_rule:
+      - "fixed molecule becomes radical at X"
+      - "O becomes OH radical"
+    ts_generation:
+      method: "constrained_scan_then_TS_opt"
+      reaction_coordinate: "X-H breaking and O-H forming"
+    spin_rule:
+      default_multiplicity: 3
+    warning: "O atom may be triplet. Check spin multiplicity carefully."
+
+  - id: oxygen_insertion
+    name: Oxygen insertion
+    reactant_patterns:
+      fixed_molecule_contains: ["C-H", "C-O", "C-C"]
+      attacking_species: ["O", "[O]"]
+    attacking_atom: "O"
+    attacked_atom_options:
+      - "C atom"
+      - "C-H bond"
+    bonds_broken:
+      - "optional C-H"
+    bonds_formed:
+      - "C-O"
+    ts_generation:
+      method: "QST2_or_NEB"
+      reaction_coordinate: "C-O formation"
+
+  - id: ozonolysis
+    name: Ozonolysis or ozone oxidation
+    reactant_patterns:
+      fixed_molecule_contains: ["C=C", "activated C-O", "oxidizable carbon site"]
+      attacking_species: ["O3"]
+    attacking_atom: "terminal O of ozone"
+    attacked_atom_options:
+      - "unsaturated carbon"
+      - "oxidizable carbon center"
+    bonds_broken:
+      - "O-O in ozone"
+      - "possible C-C"
+    bonds_formed:
+      - "C-O"
+    ts_generation:
+      method: "NEB_recommended"
