@@ -1,0 +1,2 @@
+Reaction,R1_Name,R1_Corr_E(Ha),R2_Name,R2_Corr_E(Ha),TS_Name,TS_Corr_E(Ha),Ea(Ha),Ea(kcal/mol),Ea(kJ/mol),Ea(eV)
+Reactant_1 + Reactant_2 -> Transition_State,Reactant_1,-113.23917123530175,Reactant_2,-76.38806445303237,Transition_State,-189.59059473593655,0.03664095239756193,22.99252739804169,96.20082051979885,0.9970516120710168
