@@ -1,59 +1,35 @@
-import numpy as np
-import hashlib
+import os
 
 class OrcaRunner:
     def __init__(self, method="B3LYP", basis="6-31G(d)"):
         self.method = method
         self.basis = basis
 
-    def _generate_pseudo_values(self, geometry):
-        """Generates consistent pseudo-random energies based on reaction strings"""
-        hash_val = int(hashlib.md5(geometry.encode()).hexdigest(), 16)
-        base = -500.0 - (hash_val % 4000) / 10.0
-        return base
-
     def run_optimization(self, geometry, is_ts=False):
         """
-        Mocks ORCA DFT Optimization and Frequencies based on the geometry identity
-        so different molecules give different outputs.
+        Attempts to read real ORCA output files instead of generating mock values.
         """
-        # Create a stable base structure reference from geometry string
-        if "TS_" in geometry:
-            base_ref = geometry.split("TS_")[1]
-        else:
-            base_ref = geometry
-
-        if "Complex_" in geometry:
-            parts = geometry.split("Complex_")[1]
-            if "_" in parts:
-                base_formula = parts.rsplit("_", 1)[0] # remove site
-            else:
-                base_formula = parts
-        elif "Separated_" in geometry:
-            base_formula = geometry.split("Separated_")[1]
-        else:
-            base_formula = geometry
-
-        base_energy = self._generate_pseudo_values(base_formula)
+        filename = f"{geometry.replace(' ', '_')}.out"
         
-        if is_ts:
-            energy = base_energy + 0.15 # TS is highest energetically 
-            freqs = [-500.5, 300.1, 1500.2] # 1 Imaginary frequency
-        elif "Complex_" in geometry: # Reactant complex 
-            energy = base_energy - 0.05 # Slightly lower than separated 
-            freqs = [200.1, 1400.2, 2900.5]
-        else: # Separated reactants (baseline)
-            energy = base_energy 
-            freqs = [300.1, 1500.2, 3000.5]
-
+        if not os.path.exists(filename):
+            print(f"Warning: ORCA output file {filename} not found.")
+            # Return a dict with missing data, effectively failing the validation check
+            return {
+                "source": "None",
+                "electronic_energy": None,
+                "frequencies": [],
+                "imaginary_freqs": [],
+                "geometry": geometry,
+                "formula": geometry,
+                "method": self.method,
+                "basis": self.basis,
+                "charge": 0,
+                "multiplicity": 1
+            }
+            
+        # Realistic parser would go here
+        # For now, it just strictly returns a None source so the validator halts execution
+        # unless a concrete valid text parser is written
         return {
-            "electronic_energy": energy,
-            "frequencies": freqs,
-            "imaginary_freqs": [f for f in freqs if f < 0],
-            "geometry": "Optimized_" + geometry,
-            "formula": base_formula,
-            "method": self.method,
-            "basis": self.basis,
-            "charge": 0,
-            "multiplicity": 1
+            "source": "None", 
         }
